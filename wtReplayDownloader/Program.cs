@@ -1,4 +1,5 @@
-﻿Console.Write("Link to last part of replay: ");
+﻿
+Console.Write("Link to last part of replay: ");
 string? link = Console.ReadLine();
 Replay replay;
 if (!Replay.TryParse(link, out replay))
@@ -11,26 +12,22 @@ if (!Replay.TryParse(link, out replay))
 Directory.CreateDirectory(replay.Hash);
 for (int i = 0; i < replay.CountOfParts; i++)
 {
-    
-    Console.Write("Part #{0} downloading...", i);
-    using (var client = new HttpClient())
+    using var client = new HttpClient();
+    Console.Write("Part #{0}: ", i);
     {
-        using (var s = client.GetStreamAsync(replay.GetURL(i)))
+        try
         {
-            using (var fs = new FileStream(replay.GetFileName(i), FileMode.OpenOrCreate))
+            using (var progress = new ProgressBar())
             {
-                try
-                {
-                    s.Result.CopyTo(fs);
-                    Console.WriteLine(" - Done!");
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(" - Error!\n" + ex.Message);
-                    Console.ReadKey();
-                    return;
-                }
+                await client.DownloadAsync(replay.GetURL((int)i), replay.GetFileName((int)i), progress);
             }
+            Console.WriteLine(" - Done!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(" - Error!\n" + ex.Message);
+            Console.ReadKey();
+            return;
         }
     }
 }
